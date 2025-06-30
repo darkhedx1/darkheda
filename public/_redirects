@@ -1,0 +1,53 @@
+# ULTRA GÜÇLÜ NETLIFY REDIRECTS - TÜM ROTALAR İÇİN SPA SUPPORT
+/*    /index.html   200
+
+# SPA ROUTING SUPPORT - Ana rotalar
+/home    /index.html   200
+/services    /index.html   200
+/services/*    /index.html   200
+/login    /index.html   200
+/register    /index.html   200
+/dashboard    /index.html   200
+/dashboard/*    /index.html   200
+/wallet    /index.html   200
+/checkout    /index.html   200
+/order-success/*    /index.html   200
+/about    /index.html   200
+/contact    /index.html   200
+/blog    /index.html   200
+/blog/*    /index.html   200
+/faq    /index.html   200
+/tools    /index.html   200
+/admin    /index.html   200
+/admin/*    /index.html   200
+
+# TÜRKÇE ROTALAR
+/anasayfa    /index.html   200
+/hizmetler    /index.html   200
+/hizmetler/*    /index.html   200
+/giris    /index.html   200
+/kayit    /index.html   200
+/hesap    /index.html   200
+/hesap/*    /index.html   200
+/hakkimizda    /index.html   200
+/iletisim    /index.html   200
+/sss    /index.html   200
+/araclar    /index.html   200
+/yonetim    /index.html   200
+
+# API ROUTES - Eğer gelecekte API kullanılırsa
+/api/*    /api/:splat   200
+
+# STATIC ASSETS - Cache control
+/assets/*    /assets/:splat   200
+/images/*    /images/:splat   200
+/css/*    /css/:splat   200
+/js/*    /js/:splat   200
+
+# FALLBACK - TÜM DİĞER ROTALAR
+/index    /index.html   200
+/index.html    /index.html   200
+/main    /index.html   200
+
+# 404 HANDLING - Son çare
+/404    /index.html   200
