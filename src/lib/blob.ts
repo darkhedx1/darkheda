@@ -1,5 +1,8 @@
 import { put, del, list, head } from '@vercel/blob';
 
+// Get the blob token from environment variables
+const BLOB_TOKEN = import.meta.env.VITE_BLOB_READ_WRITE_TOKEN;
+
 // Blob storage utilities for file management
 export class BlobStorage {
   private static instance: BlobStorage;
@@ -19,6 +22,7 @@ export class BlobStorage {
       const blob = await put(filename, file, {
         access: 'public',
         addRandomSuffix: !pathname, // Add random suffix if no specific pathname provided
+        token: BLOB_TOKEN,
       });
 
       return {
@@ -53,7 +57,7 @@ export class BlobStorage {
   // Delete file from Vercel Blob
   async deleteFile(url: string): Promise<void> {
     try {
-      await del(url);
+      await del(url, { token: BLOB_TOKEN });
     } catch (error) {
       console.error('Error deleting file from blob:', error);
       throw new Error('Dosya silinirken bir hata oluştu');
@@ -63,7 +67,7 @@ export class BlobStorage {
   // Delete multiple files
   async deleteFiles(urls: string[]): Promise<void> {
     try {
-      await Promise.all(urls.map(url => del(url)));
+      await Promise.all(urls.map(url => del(url, { token: BLOB_TOKEN })));
     } catch (error) {
       console.error('Error deleting multiple files:', error);
       throw new Error('Dosyalar silinirken bir hata oluştu');
@@ -73,7 +77,7 @@ export class BlobStorage {
   // List files in blob storage
   async listFiles(options?: { prefix?: string; limit?: number; cursor?: string }) {
     try {
-      const result = await list(options);
+      const result = await list({ ...options, token: BLOB_TOKEN });
       return result;
     } catch (error) {
       console.error('Error listing files:', error);
@@ -84,7 +88,7 @@ export class BlobStorage {
   // Get file metadata
   async getFileInfo(url: string) {
     try {
-      const result = await head(url);
+      const result = await head(url, { token: BLOB_TOKEN });
       return result;
     } catch (error) {
       console.error('Error getting file info:', error);
