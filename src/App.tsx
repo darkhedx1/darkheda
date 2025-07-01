@@ -7,7 +7,6 @@ import { CartProvider } from './contexts/CartContext';
 import { OrderProvider } from './contexts/OrderContext';
 import { PaymentProvider } from './contexts/PaymentContext';
 import { ServiceProvider } from './contexts/ServiceContext';
-import { BlobProvider } from './contexts/BlobContext';
 import Navbar from './components/Layout/Navbar';
 import Footer from './components/Layout/Footer';
 import CartSidebar from './components/Cart/CartSidebar';
@@ -28,7 +27,6 @@ import CheckoutPage from './pages/CheckoutPage';
 import OrderSuccessPage from './pages/OrderSuccessPage';
 import WalletPage from './pages/WalletPage';
 import UserSettingsPage from './pages/UserSettingsPage';
-import FileManagerPage from './pages/FileManagerPage';
 
 // 404 Fallback Component - SPA için optimize edilmiş
 const NotFoundFallback: React.FC = () => {
@@ -40,7 +38,7 @@ const NotFoundFallback: React.FC = () => {
     const validRoutes = [
       '/', '/home', '/services', '/login', '/register', '/dashboard', 
       '/wallet', '/checkout', '/about', '/contact', '/blog', '/faq', 
-      '/tools', '/admin', '/files', '/anasayfa', '/hizmetler', '/giris', '/kayit',
+      '/tools', '/admin', '/anasayfa', '/hizmetler', '/giris', '/kayit',
       '/hesap', '/hakkimizda', '/iletisim', '/sss', '/araclar', '/yonetim'
     ];
     
@@ -81,72 +79,68 @@ function App() {
       <AuthProvider>
         <PaymentProvider>
           <ServiceProvider>
-            <BlobProvider>
-              <CartProvider>
-                <OrderProvider>
-                  <Router>
-                    <div className="min-h-screen bg-white dark:bg-dark-900 transition-colors duration-300">
-                      <Navbar />
-                      <main className="pt-16">
-                        <Routes>
-                          <Route path="/" element={<HomePage />} />
-                          <Route path="/services" element={<ServicesPage />} />
-                          <Route path="/services/:platform" element={<ServiceDetailPage />} />
-                          <Route path="/login" element={<LoginPage />} />
-                          <Route path="/register" element={<RegisterPage />} />
-                          <Route path="/dashboard" element={<DashboardPage />} />
-                          <Route path="/dashboard/settings" element={<UserSettingsPage />} />
-                          <Route path="/wallet" element={<WalletPage />} />
-                          <Route path="/checkout" element={<CheckoutPage />} />
-                          <Route path="/order-success/:orderId" element={<OrderSuccessPage />} />
-                          <Route path="/about" element={<AboutPage />} />
-                          <Route path="/contact" element={<ContactPage />} />
-                          <Route path="/blog" element={<BlogPage />} />
-                          <Route path="/blog/:id" element={<BlogPage />} />
-                          <Route path="/faq" element={<FAQPage />} />
-                          <Route path="/tools" element={<ToolsPage />} />
-                          <Route path="/admin" element={<AdminPage />} />
-                          <Route path="/admin/:section" element={<AdminPage />} />
-                          <Route path="/files" element={<FileManagerPage />} />
-                          
-                          {/* TÜRKÇE ROTALAR */}
-                          <Route path="/home" element={<HomePage />} />
-                          <Route path="/index" element={<HomePage />} />
-                          <Route path="/index.html" element={<HomePage />} />
-                          <Route path="/main" element={<HomePage />} />
-                          <Route path="/anasayfa" element={<HomePage />} />
-                          <Route path="/hizmetler" element={<ServicesPage />} />
-                          <Route path="/hizmetler/:platform" element={<ServiceDetailPage />} />
-                          <Route path="/giris" element={<LoginPage />} />
-                          <Route path="/kayit" element={<RegisterPage />} />
-                          <Route path="/hesap" element={<DashboardPage />} />
-                          <Route path="/hesap/ayarlar" element={<UserSettingsPage />} />
-                          <Route path="/hakkimizda" element={<AboutPage />} />
-                          <Route path="/iletisim" element={<ContactPage />} />
-                          <Route path="/sss" element={<FAQPage />} />
-                          <Route path="/araclar" element={<ToolsPage />} />
-                          <Route path="/yonetim" element={<AdminPage />} />
-                          <Route path="/dosyalar" element={<FileManagerPage />} />
-                          
-                          {/* CATCH-ALL ROUTE - TÜM DİĞER ROTALAR */}
-                          <Route path="*" element={<NotFoundFallback />} />
-                        </Routes>
-                      </main>
-                      <Footer />
-                      <CartSidebar isOpen={cartOpen} onClose={() => setCartOpen(false)} />
-                      <WhatsAppChat />
-                      <Toaster 
-                        position="top-right"
-                        toastOptions={{
-                          duration: 4000,
-                          className: 'dark:bg-dark-800 dark:text-white',
-                        }}
-                      />
-                    </div>
-                  </Router>
-                </OrderProvider>
-              </CartProvider>
-            </BlobProvider>
+            <CartProvider>
+              <OrderProvider>
+                <Router>
+                  <div className="min-h-screen bg-white dark:bg-dark-900 transition-colors duration-300">
+                    <Navbar />
+                    <main className="pt-16">
+                      <Routes>
+                        <Route path="/" element={<HomePage />} />
+                        <Route path="/services" element={<ServicesPage />} />
+                        <Route path="/services/:platform" element={<ServiceDetailPage />} />
+                        <Route path="/login" element={<LoginPage />} />
+                        <Route path="/register" element={<RegisterPage />} />
+                        <Route path="/dashboard" element={<DashboardPage />} />
+                        <Route path="/dashboard/settings" element={<UserSettingsPage />} />
+                        <Route path="/wallet" element={<WalletPage />} />
+                        <Route path="/checkout" element={<CheckoutPage />} />
+                        <Route path="/order-success/:orderId" element={<OrderSuccessPage />} />
+                        <Route path="/about" element={<AboutPage />} />
+                        <Route path="/contact" element={<ContactPage />} />
+                        <Route path="/blog" element={<BlogPage />} />
+                        <Route path="/blog/:id" element={<BlogPage />} />
+                        <Route path="/faq" element={<FAQPage />} />
+                        <Route path="/tools" element={<ToolsPage />} />
+                        <Route path="/admin" element={<AdminPage />} />
+                        <Route path="/admin/:section" element={<AdminPage />} />
+                        
+                        {/* TÜRKÇE ROTALAR */}
+                        <Route path="/home" element={<HomePage />} />
+                        <Route path="/index" element={<HomePage />} />
+                        <Route path="/index.html" element={<HomePage />} />
+                        <Route path="/main" element={<HomePage />} />
+                        <Route path="/anasayfa" element={<HomePage />} />
+                        <Route path="/hizmetler" element={<ServicesPage />} />
+                        <Route path="/hizmetler/:platform" element={<ServiceDetailPage />} />
+                        <Route path="/giris" element={<LoginPage />} />
+                        <Route path="/kayit" element={<RegisterPage />} />
+                        <Route path="/hesap" element={<DashboardPage />} />
+                        <Route path="/hesap/ayarlar" element={<UserSettingsPage />} />
+                        <Route path="/hakkimizda" element={<AboutPage />} />
+                        <Route path="/iletisim" element={<ContactPage />} />
+                        <Route path="/sss" element={<FAQPage />} />
+                        <Route path="/araclar" element={<ToolsPage />} />
+                        <Route path="/yonetim" element={<AdminPage />} />
+                        
+                        {/* CATCH-ALL ROUTE - TÜM DİĞER ROTALAR */}
+                        <Route path="*" element={<NotFoundFallback />} />
+                      </Routes>
+                    </main>
+                    <Footer />
+                    <CartSidebar isOpen={cartOpen} onClose={() => setCartOpen(false)} />
+                    <WhatsAppChat />
+                    <Toaster 
+                      position="top-right"
+                      toastOptions={{
+                        duration: 4000,
+                        className: 'dark:bg-dark-800 dark:text-white',
+                      }}
+                    />
+                  </div>
+                </Router>
+              </OrderProvider>
+            </CartProvider>
           </ServiceProvider>
         </PaymentProvider>
       </AuthProvider>

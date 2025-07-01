@@ -1,22 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  balance: number;
-  avatar?: string;
-  role?: 'user' | 'admin';
-  createdAt: string;
-  lastLogin?: string;
-  isActive: boolean;
-}
+import { supabase, userOperations, User } from '../lib/supabase';
 
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  register: (name: string, email: string, password: string, phone?: string) => Promise<void>;
   logout: () => void;
   updateBalance: (amount: number) => void;
   isLoading: boolean;
@@ -24,43 +13,31 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Şifre güvenlik kuralları
-const PASSWORD_RULES = {
-  minLength: 8,
-  requireUppercase: true,
-  requireLowercase: true,
-  requireNumbers: true,
-  requireSpecialChars: false
+// Admin credentials
+const ADMIN_CREDENTIALS = {
+  'enginkeskin@garantitakipcim.com': 'EnginKeskin1.',
+  'berktahakeskin@garantitakipcim.com': 'BerkTahaKeskin1.',
+  'omeremirerdogan@garantitakipcim.com': 'Emir4474'
 };
 
-// E-posta doğrulama
-const validateEmail = (email: string): boolean => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-};
-
-// Şifre doğrulama
+// Password validation
 const validatePassword = (password: string): { isValid: boolean; errors: string[] } => {
   const errors: string[] = [];
   
-  if (password.length < PASSWORD_RULES.minLength) {
-    errors.push(`Şifre en az ${PASSWORD_RULES.minLength} karakter olmalıdır`);
+  if (password.length < 8) {
+    errors.push('Şifre en az 8 karakter olmalıdır');
   }
   
-  if (PASSWORD_RULES.requireUppercase && !/[A-Z]/.test(password)) {
-    errors.push('Şifre en az bir büyük harf içermelidir');
-  }
-  
-  if (PASSWORD_RULES.requireLowercase && !/[a-z]/.test(password)) {
+  if (!/[a-z]/.test(password)) {
     errors.push('Şifre en az bir küçük harf içermelidir');
   }
   
-  if (PASSWORD_RULES.requireNumbers && !/\d/.test(password)) {
-    errors.push('Şifre en az bir rakam içermelidir');
+  if (!/[A-Z]/.test(password)) {
+    errors.push('Şifre en az bir büyük harf içermelidir');
   }
   
-  if (PASSWORD_RULES.requireSpecialChars && !/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-    errors.push('Şifre en az bir özel karakter içermelidir');
+  if (!/\d/.test(password)) {
+    errors.push('Şifre en az bir rakam içermelidir');
   }
   
   return {
@@ -69,7 +46,13 @@ const validatePassword = (password: string): { isValid: boolean; errors: string[
   };
 };
 
-// İsim doğrulama
+// Email validation
+const validateEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+// Name validation
 const validateName = (name: string): { isValid: boolean; errors: string[] } => {
   const errors: string[] = [];
   
@@ -99,55 +82,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
   const [isLoading, setIsLoading] = useState(false);
 
-  // Kullanıcı veritabanı simülasyonu
-  const [users, setUsers] = useState<User[]>(() => {
-    const savedUsers = localStorage.getItem('registeredUsers');
-    const defaultUsers = [
-      {
-        id: 'admin1',
-        name: 'Engin Keskin',
-        email: 'enginkeskin@garantitakipcim.com',
-        balance: 999999.99,
-        role: 'admin' as const,
-        createdAt: '2024-01-01T00:00:00.000Z',
-        isActive: true
-      },
-      {
-        id: 'admin2',
-        name: 'Berk Taha Keskin',
-        email: 'berktahakeskin@garantitakipcim.com',
-        balance: 999999.99,
-        role: 'admin' as const,
-        createdAt: '2024-01-01T00:00:00.000Z',
-        isActive: true
-      },
-      {
-        id: 'admin3',
-        name: 'Ömer Emir Erdoğan',
-        email: 'omeremirerdogan@garantitakipcim.com',
-        balance: 999999.99,
-        role: 'admin' as const,
-        createdAt: '2024-01-01T00:00:00.000Z',
-        isActive: true
-      },
-      // Eski admin hesabı (geriye dönük uyumluluk için)
-      {
-        id: 'admin_legacy',
-        name: 'Emir Erdoğan',
-        email: 'omeremirerdogan4@gmail.com',
-        balance: 999999.99,
-        role: 'admin' as const,
-        createdAt: '2024-01-01T00:00:00.000Z',
-        isActive: true
-      }
-    ];
-    return savedUsers ? JSON.parse(savedUsers) : defaultUsers;
-  });
-
-  useEffect(() => {
-    localStorage.setItem('registeredUsers', JSON.stringify(users));
-  }, [users]);
-
   useEffect(() => {
     if (user) {
       localStorage.setItem('user', JSON.stringify(user));
@@ -162,7 +96,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     
     try {
-      // Giriş doğrulamaları
+      // Input validation
       if (!email.trim()) {
         throw new Error('E-posta adresi gerekli');
       }
@@ -174,52 +108,61 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!password.trim()) {
         throw new Error('Şifre gerekli');
       }
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Kullanıcıyı kayıtlı kullanıcılar arasında ara
-      const foundUser = users.find(u => u.email.toLowerCase() === email.toLowerCase().trim());
+
+      const normalizedEmail = email.toLowerCase().trim();
+
+      // Check if it's an admin login
+      if (ADMIN_CREDENTIALS[normalizedEmail as keyof typeof ADMIN_CREDENTIALS]) {
+        const expectedPassword = ADMIN_CREDENTIALS[normalizedEmail as keyof typeof ADMIN_CREDENTIALS];
+        
+        if (password !== expectedPassword) {
+          throw new Error('Şifre hatalı');
+        }
+
+        // Check if admin user exists in database, if not create it
+        let adminUser = await userOperations.getUserByEmail(normalizedEmail);
+        
+        if (!adminUser) {
+          // Create admin user in database
+          const adminName = normalizedEmail.split('@')[0].replace(/[^a-zA-Z]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+          
+          adminUser = await userOperations.createUser({
+            email: normalizedEmail,
+            name: adminName,
+            balance: 999999.99,
+            role: 'admin',
+            is_active: true
+          });
+        }
+
+        // Update last login
+        await userOperations.updateLastLogin(adminUser.id);
+        
+        setUser(adminUser);
+        return;
+      }
+
+      // Regular user login
+      const foundUser = await userOperations.getUserByEmail(normalizedEmail);
       
       if (!foundUser) {
         throw new Error('Bu e-posta adresi ile kayıtlı kullanıcı bulunamadı');
       }
 
-      if (!foundUser.isActive) {
+      if (!foundUser.is_active) {
         throw new Error('Hesabınız devre dışı bırakılmış. Lütfen destek ile iletişime geçin');
       }
 
-      // Admin şifre kontrolü
-      const validPasswords: { [key: string]: string } = {
-        'enginkeskin@garantitakipcim.com': 'EnginKeskin1.',
-        'berktahakeskin@garantitakipcim.com': 'BerkTahaKeskin1.',
-        'omeremirerdogan@garantitakipcim.com': 'Emir4474',
-        'omeremirerdogan4@gmail.com': 'Emir4474' // Eski hesap
-      };
-
-      const expectedPassword = validPasswords[email.toLowerCase().trim()];
-      if (expectedPassword && password !== expectedPassword) {
+      // For regular users, we'll implement proper password hashing later
+      // For now, simple validation
+      if (password.length < 6) {
         throw new Error('Şifre hatalı');
       }
 
-      // Normal kullanıcı için şifre kontrolü (basit simülasyon)
-      if (!expectedPassword && foundUser.role !== 'admin') {
-        // Normal kullanıcılar için şifre kontrolü burada yapılabilir
-        // Şu an için basit kontrol
-        if (password.length < 6) {
-          throw new Error('Şifre hatalı');
-        }
-      }
-
-      // Son giriş zamanını güncelle
-      const updatedUser = {
-        ...foundUser,
-        lastLogin: new Date().toISOString()
-      };
-
-      // Kullanıcıları güncelle
-      setUsers(prev => prev.map(u => u.id === foundUser.id ? updatedUser : u));
-      setUser(updatedUser);
+      // Update last login
+      await userOperations.updateLastLogin(foundUser.id);
+      
+      setUser(foundUser);
       
     } catch (error) {
       throw error;
@@ -228,17 +171,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const register = async (name: string, email: string, password: string) => {
+  const register = async (name: string, email: string, password: string, phone?: string) => {
     setIsLoading(true);
     
     try {
-      // İsim doğrulaması
+      // Name validation
       const nameValidation = validateName(name);
       if (!nameValidation.isValid) {
         throw new Error(nameValidation.errors[0]);
       }
       
-      // E-posta doğrulaması
+      // Email validation
       if (!email.trim()) {
         throw new Error('E-posta adresi gerekli');
       }
@@ -247,34 +190,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error('Geçerli bir e-posta adresi girin');
       }
       
-      // Şifre doğrulaması
+      // Password validation
       const passwordValidation = validatePassword(password);
       if (!passwordValidation.isValid) {
         throw new Error(passwordValidation.errors[0]);
       }
+
+      const normalizedEmail = email.toLowerCase().trim();
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // E-posta kontrolü
-      const existingUser = users.find(u => u.email.toLowerCase() === email.toLowerCase().trim());
+      // Check if user already exists
+      const existingUser = await userOperations.getUserByEmail(normalizedEmail);
       if (existingUser) {
         throw new Error('Bu e-posta adresi zaten kayıtlı');
       }
 
-      // Yeni kullanıcı oluştur
-      const newUser: User = {
-        id: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      // Create new user in Supabase
+      const newUser = await userOperations.createUser({
         name: name.trim(),
-        email: email.toLowerCase().trim(),
+        email: normalizedEmail,
+        phone: phone?.trim(),
         balance: 0,
         role: 'user',
-        createdAt: new Date().toISOString(),
-        isActive: true
-      };
+        is_active: true
+      });
 
-      // Kullanıcıyı kaydet
-      setUsers(prev => [...prev, newUser]);
       setUser(newUser);
       
     } catch (error) {
@@ -291,9 +230,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateBalance = (amount: number) => {
     if (user) {
-      const updatedUser = { ...user, balance: user.balance + amount };
+      const newBalance = user.balance + amount;
+      const updatedUser = { ...user, balance: newBalance };
       setUser(updatedUser);
-      setUsers(prev => prev.map(u => u.id === user.id ? updatedUser : u));
+      
+      // Update in database
+      userOperations.updateUserBalance(user.id, newBalance).catch(error => {
+        console.error('Error updating balance in database:', error);
+        toast.error('Bakiye güncellenirken bir hata oluştu');
+      });
     }
   };
 
